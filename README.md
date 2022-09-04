@@ -1,4 +1,4 @@
-## tinykv
+# tinykv-go
 学习 pincap 的 talent-plan 中的 [tinykv 实验](https://github.com/talent-plan/tinykv)。
 了解分布式存储。
 
