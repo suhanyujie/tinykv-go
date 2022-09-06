@@ -2,6 +2,9 @@ package server
 
 import (
 	"context"
+	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/pingcap-incubator/tinykv/kv/coprocessor"
 	"github.com/pingcap-incubator/tinykv/kv/storage"
@@ -50,7 +53,25 @@ func (server *Server) Snapshot(stream tinykvpb.TinyKv_SnapshotServer) error {
 // Transactional API.
 func (server *Server) KvGet(_ context.Context, req *kvrpcpb.GetRequest) (*kvrpcpb.GetResponse, error) {
 	// Your Code Here (4B).
-	return nil, nil
+	result := &kvrpcpb.GetResponse{
+		Value: nil,
+	}
+	reader, err := server.storage.Reader(req.Context)
+	if err != nil {
+		return nil, errors.Wrap(err, "Reader err")
+	}
+	defer reader.Close()
+	data, err := reader.GetCF("", req.Key)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			result.NotFound = true
+			return result, nil
+		}
+		return nil, errors.Wrap(err, "GetCF err")
+	}
+	result.Value = data
+
+	return result, nil
 }
 
 func (server *Server) KvPrewrite(_ context.Context, req *kvrpcpb.PrewriteRequest) (*kvrpcpb.PrewriteResponse, error) {
