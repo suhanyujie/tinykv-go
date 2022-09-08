@@ -165,7 +165,26 @@ func newRaft(c *Config) *Raft {
 		panic(err.Error())
 	}
 	// Your Code Here (2A).
-	return nil
+	rLogStorage := NewMemoryStorage()
+	peer := &Raft{
+		id:               c.ID,
+		Term:             0,
+		Vote:             0,
+		RaftLog:          newLog(rLogStorage),
+		Prs:              make(map[uint64]*Progress, 10),
+		State:            StateFollower,
+		votes:            make(map[uint64]bool, 10),
+		msgs:             nil,
+		Lead:             0,
+		heartbeatTimeout: c.HeartbeatTick,
+		electionTimeout:  c.ElectionTick,
+		heartbeatElapsed: 0,
+		electionElapsed:  0,
+		leadTransferee:   0,
+		PendingConfIndex: 0,
+	}
+
+	return peer
 }
 
 // sendAppend sends an append RPC with new entries (if any) and the

@@ -14,7 +14,10 @@
 
 package raft
 
-import pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
+import (
+	"github.com/pingcap-incubator/tinykv/log"
+	pb "github.com/pingcap-incubator/tinykv/proto/pkg/eraftpb"
+)
 
 // RaftLog manage the log entries, its struct look like:
 //
@@ -56,7 +59,32 @@ type RaftLog struct {
 // to the state that it just commits and applies the latest snapshot.
 func newLog(storage Storage) *RaftLog {
 	// Your Code Here (2A).
-	return nil
+	logger := &RaftLog{
+		storage:         storage,
+		committed:       0,
+		applied:         0,
+		stabled:         0,
+		entries:         nil,
+		pendingSnapshot: nil,
+	}
+	firstIndex, err := storage.FirstIndex()
+	if err != nil {
+		log.Errorf("[newLog] FirstIndex err: %v", err)
+		return nil
+	}
+	lastIndex, err := storage.LastIndex()
+	if err != nil {
+		log.Errorf("[newLog] LastIndex err: %v", err)
+		return nil
+	}
+	entries, err := storage.Entries(firstIndex, lastIndex)
+	if err != nil {
+		log.Errorf("[newLog] Entries err: %v", err)
+		return nil
+	}
+	logger.entries = entries
+
+	return logger
 }
 
 // We need to compact the log entries in some point of time like
@@ -69,23 +97,30 @@ func (l *RaftLog) maybeCompact() {
 // unstableEntries return all the unstable entries
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
+	if l.LastIndex() > l.stabled {
+		return l.entries[l.stabled+1 : l.LastIndex()]
+	}
 	return nil
 }
 
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
-	return nil
+	return l.entries[l.applied+1 : l.committed]
 }
 
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
-	return 0
+	return uint64(len(l.entries)) - 1
 }
 
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
+	if i < uint64(len(l.entries)) {
+		return l.entries[i].GetTerm(), nil
+	}
+
 	return 0, nil
 }
