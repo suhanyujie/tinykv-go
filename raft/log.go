@@ -53,6 +53,7 @@ type RaftLog struct {
 	pendingSnapshot *pb.Snapshot
 
 	// Your Data Here (2A).
+	FirstIndex uint64
 }
 
 // newLog returns log using the given storage. It recovers the log
@@ -77,11 +78,14 @@ func newLog(storage Storage) *RaftLog {
 		log.Errorf("[newLog] LastIndex err: %v", err)
 		return nil
 	}
-	entries, err := storage.Entries(firstIndex, lastIndex)
+	entries, err := storage.Entries(firstIndex, lastIndex+1)
 	if err != nil {
 		log.Errorf("[newLog] Entries err: %v", err)
 		return nil
 	}
+	logger.FirstIndex = firstIndex
+	logger.applied = firstIndex - 1
+	logger.stabled = lastIndex
 	logger.entries = entries
 
 	return logger
@@ -112,7 +116,16 @@ func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
-	return uint64(len(l.entries)) - 1
+	var index uint64
+	if !IsEmptySnap(l.pendingSnapshot) {
+		index = l.pendingSnapshot.Metadata.Index
+	}
+	if len(l.entries) > 0 {
+		return max(l.entries[len(l.entries)-1].Index, index)
+	}
+	i, _ := l.storage.LastIndex()
+
+	return max(i, index)
 }
 
 // Term return the term of the entry in the given index
