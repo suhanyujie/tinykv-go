@@ -12,3 +12,4 @@
     - 一个半成品 https://blog.csdn.net/westbrookliu/article/details/107578359
 - 尹成带你学习go语言分布式强化与raft算法 https://www.bilibili.com/video/BV1th411U7Ly?p=13
 - Raft 的 snapshots https://zhuanlan.zhihu.com/p/208393872
+- 幻灯片动画演示 Rust http://thesecretlivesofdata.com/raft/
