@@ -225,8 +225,15 @@ func (r *Raft) sendAppend(to uint64) bool {
 	prevLogTerm, err := r.RaftLog.Term(prevIndex)
 	if err != nil {
 		if err == ErrCompacted {
-			r.se
+			r.sendSnapshot(to)
+			return false
 		}
+		panic(err)
+	}
+	var entries []*pb.Entry
+	cnt := len(r.RaftLog.entries)
+	for i := r.RaftLog.toSliceIndex(prevIndex + 1); i < cnt; i++ {
+		entries = append(entries, &r.RaftLog.entries[i])
 	}
 	return false
 }

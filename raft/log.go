@@ -137,3 +137,12 @@ func (l *RaftLog) Term(i uint64) (uint64, error) {
 
 	return 0, nil
 }
+
+func (l *RaftLog) toSliceIndex(i uint64) int {
+	idx := int(i - l.FirstIndex)
+	if idx < 0 {
+		panic("[toSliceIndex] er: index < 0")
+	}
+
+	return idx
+}
